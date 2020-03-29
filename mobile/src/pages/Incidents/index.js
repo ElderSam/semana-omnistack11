@@ -12,9 +12,10 @@ import styles from './styles';
 export default function Incidents(){
     const [incidents, setIncidents] = useState([]);
     const [total, setTotal] = useState(0);
+    
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false); //carrega uma página por vez
-
+    const [errorMsg, setErrorMsg] = useState('');
     const navigation = useNavigation();
 
     function navigateToDetail(incident){
@@ -26,7 +27,7 @@ export default function Incidents(){
             return;
         }
 
-        if(total > 0 && incidents.lenght === total){ //se já carregou todos os incidentes existentes
+        if(total > 0 && incidents.length === total){ //se já carregou todos os incidentes existentes
             return;
         }
    
@@ -34,13 +35,25 @@ export default function Incidents(){
 
         const response = await api.get('incidents', {
             params: { page } //passa a página atual
-        });
+        }).then(function(response){
+            console.log(response)
 
-        setIncidents([...incidents, ...response.data]); //guarda os dados dentro de um estado, juntando com os que já carregaram
-        
-        setTotal(response.headers['X-Total-Count']);
-        setPage(page + 1);
-        setLoading(false);
+            setIncidents([... incidents, ... response.data]); //guarda os dados dentro de um estado, juntando com os que já carregaram
+            
+            setTotal(response.headers['x-total-count']);
+            setPage(page + 1);
+            setLoading(false);
+
+          })
+          .catch(function(error) {
+           // const auxErrorMsg = JSON.parse(response)
+            const errorMsg = 'Erro na requisição da API: ' + error.message
+            setErrorMsg(errorMsg)
+          console.log(errorMsg);
+           // ADD THIS THROW error
+            throw error;
+          });
+
     }
 
     useEffect(() => {
@@ -58,7 +71,7 @@ export default function Incidents(){
             
             <Text style={styles.title}>Bem vindo!</Text>
             <Text style={styles.description}>Escolha um dos casos abaixo e salve o dia!</Text>
-            
+            <Text style={[{ color: 'red', fontWeight: 'bold' }]}>{errorMsg}</Text>
             <FlatList
                 data={incidents}
                 style={styles.incidentList} /* Lista que pode fazer Scroll */               
